@@ -1,33 +1,35 @@
 # chatbot.py
-import retriever
-import ollama_interface
+from retriever import Retriever
+from ollama_interface import OllamaInterface
 import config
 
-def main():
-    print("Khởi động chatbot...")
-    try:
-        retriever_instance = retriever.Retriever()
-    except Exception as e:
-        print(f"Lỗi khi tải index FAISS: {e}")
-        print("Vui lòng chạy setup.py trước để xử lý tài liệu.")
-        return
-    
-    print("Chatbot sẵn sàng! Gõ 'exit' để thoát.")
-    while True:
-        user_input = input("Bạn: ")
-        if user_input.lower() in ["exit", "quit"]:
-            break
+class Chatbot:
+    def __init__(self):
+        print("Khởi động chatbot...")
+        self.retriever = Retriever()
+        self.ollama = OllamaInterface()
         
-        # Truy xuất các chunk liên quan
-        relevant_chunks = retriever_instance.get_relevant_chunks(user_input)
+    def get_response(self, question):
+        # Get relevant chunks from the retriever
+        relevant_chunks = self.retriever.get_relevant_chunks(question)
         
-        # Xây dựng prompt
+        # Prepare context from relevant chunks
         context = "\n".join(relevant_chunks)
-        prompt = f"Context:\n{context}\n\nQuestion: {user_input}\n\nAnswer:"
         
-        # Gửi đến Ollama và nhận câu trả lời
-        response = ollama_interface.get_response(prompt)
-        print("Chatbot:", response)
+        # Get response from Ollama
+        response = self.ollama.get_response(question, context)
+        return response
+
+    def run(self):
+        print("Chatbot sẵn sàng! Gõ 'exit' để thoát.")
+        while True:
+            user_input = input("Bạn: ")
+            if user_input.lower() == 'exit':
+                break
+                
+            response = self.get_response(user_input)
+            print(f"Chatbot: {response}")
 
 if __name__ == "__main__":
-    main()
+    chatbot = Chatbot()
+    chatbot.run()
